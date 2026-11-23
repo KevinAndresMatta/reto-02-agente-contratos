@@ -1,0 +1,7 @@
+node_modules/
+out/
+dist/
+.env
+*.log
+EXPLICACION_LINEA_A_LINEA.md
+PRD-02-agente-registro-contratos 3.md

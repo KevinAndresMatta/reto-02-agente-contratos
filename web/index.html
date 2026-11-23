@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Periferia IT - Agente Registro de Contratos</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #2563eb;
+      --success: #15803d;
+      --success-light: #22c55e;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success-bg: #dcfce7;
+      --success-text: #166534;
+      --warn-bg: #fef3c7;
+      --warn-text: #92400e;
+      --danger-bg: #fee2e2;
+      --danger-text: #991b1b;
+      --info-bg: #e0e7ff;
+      --info-text: #3730a3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .brand h1 { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+
+    main {
+      max-width: 1150px; width: 100%; margin: 2rem auto; padding: 0 1rem;
+      display: flex; flex-direction: column; gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--surface); border-radius: 12px; border: 1px solid var(--border);
+      padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .card-title { font-size: 1.15rem; font-weight: 600; }
+
+    .btn {
+      background: var(--primary); color: white; border: none; padding: 0.45rem 0.9rem;
+      border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex;
+      align-items: center; gap: 0.35rem; font-size: 0.82rem; transition: all 0.15s;
+    }
+    .btn:hover { background: var(--primary-light); }
+    .btn-success { background: var(--success); }
+    .btn-success:hover { background: var(--success-light); }
+    .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+    .btn-outline:hover { background: #eff6ff; }
+
+    .inbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 1rem; }
+    .msg-item {
+      border: 1px solid var(--border); border-radius: 8px; padding: 1rem;
+      background: #fafafa; display: flex; flex-direction: column; gap: 0.6rem;
+    }
+    .msg-top { display: flex; justify-content: space-between; align-items: center; }
+    .msg-id { font-weight: 700; color: var(--primary); font-size: 0.85rem; }
+    .msg-badge {
+      font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;
+    }
+    .has-contract { background: var(--success-bg); color: var(--success-text); }
+    .no-contract { background: var(--danger-bg); color: var(--danger-text); }
+
+    .data-table {
+      width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem;
+    }
+    .data-table th, .data-table td {
+      border: 1px solid var(--border); padding: 0.6rem 0.8rem; text-align: left;
+    }
+    .data-table th { background: #f1f5f9; font-weight: 600; }
+    
+    .conf-badge {
+      font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 700;
+    }
+    .conf-high { background: var(--success-bg); color: var(--success-text); }
+    .conf-low { background: var(--warn-bg); color: var(--warn-text); }
+
+    .class-nuevo { background: var(--success-bg); color: var(--success-text); border: 1px solid #86efac; }
+    .class-actualizacion { background: var(--info-bg); color: var(--info-text); border: 1px solid #a5b4fc; }
+    .class-duplicado { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .class-rechazado { background: var(--danger-bg); color: var(--danger-text); border: 1px solid #fca5a5; }
+
+    .validation-box {
+      border-radius: 8px; padding: 1rem; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <span style="font-size: 1.5rem;">📁</span>
+      <div>
+        <h1>Agente de Registro de Contratos</h1>
+        <small style="color: var(--text-muted);">Periferia IT Group · Panel de Auditoría</small>
+      </div>
+    </div>
+    <div>
+      <button class="btn btn-outline" style="color: #b91c1c; border-color: #fca5a5;" onclick="reiniciarDatos()">
+        🔄 Reiniciar Todo (Buzón limpio)
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Chat -->
+    <div class="card" style="border: 2px solid var(--primary-light);">
+      <div class="card-header" style="border-bottom: 1px solid var(--border); padding-bottom: 0.8rem;">
+        <div>
+          <h2 class="card-title" style="color: var(--primary);">💬 Chat con el Agente Autónomo (Gemini)</h2>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem;">
+            Conversa directamente con el agente. El agente ejecuta herramientas en segundo plano, solicita confirmación humana para datos dudosos y genera alertas.
+          </p>
+        </div>
+        <button class="btn btn-outline" style="font-size: 0.75rem;" onclick="insertarPromptEjemplo()">
+          📝 Usar Prompt de la Demo
+        </button>
+      </div>
+
+      <!-- Ventana de mensajes -->
+      <div id="chatMessages" style="height: 380px; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem; background: #fafafa; border-radius: 8px; margin: 1rem 0; border: 1px solid var(--border);">
+        <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem 1rem; max-width: 85%; font-size: 0.88rem; line-height: 1.4;">
+          👋 ¡Hola! Soy tu <strong>Agente de Registro de Contratos</strong> de Periferia IT Group.
+          <br><br>
+          Puedo revisar el buzón, extraer cláusulas, validar duplicados y otrosíes, archivar en SharePoint y generar tu reporte de alertas.
+          <br><br>
+          <em>Prueba enviándome:</em> <strong>"Procesa el buzón de contratos con fecha de hoy 2026-09-03"</strong>.
+        </div>
+      </div>
+
+      <!-- Barra de entrada -->
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <input type="text" id="chatInput" placeholder="Escribe tu instrucción al agente (ej: Procesa el buzón de contratos...)" style="flex: 1; padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem;" onkeydown="if(event.key==='Enter') enviarMensajeChat()">
+        <button id="btnEnviarChat" class="btn" style="padding: 0.6rem 1.2rem;" onclick="enviarMensajeChat()">
+          <span>Enviar ➔</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Buzón de Contratos -->
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">📥 Buzón de Contratos (Herramientas 1 a 4)</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            Flujo de trabajo: <strong>Extraer</strong> (HU-2) ➔ <strong>Validar</strong> (HU-3) ➔ <strong>Registrar en SharePoint/CSV</strong> (HU-4).
+          </p>
+        </div>
+        <button id="btnLeerBuzon" class="btn" onclick="cargarBuzon()">
+          <span>⚡ Cargar Buzón</span>
+        </button>
+      </div>
+
+      <div id="resultadoBuzon">
+        <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 2rem 0;">
+          Haz clic en <strong>Cargar Buzón</strong> para empezar.
+        </p>
+      </div>
+    </div>
+
+    <!-- Panel de Resultados -->
+    <div class="card" id="cardResultado" style="display: none;">
+      <div class="card-header">
+        <h2 class="card-title" id="tituloResultado">Resultado de la Operación</h2>
+      </div>
+
+      <div id="zonaRegistro"></div>
+      <div id="zonaValidacion"></div>
+      <div id="zonaFicha"></div>
+    </div>
+
+    <!-- Visor en Vivo del Maestro CSV -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">📊 Maestro de Contratos (SharePoint / CSV en Vivo)</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            Visualiza el archivo oficial <code>out/sharepoint/maestro-contratos.csv</code>. Aquí se refleja en tiempo real cada registro.
+          </p>
+        </div>
+        <button class="btn btn-outline" onclick="cargarMaestro()">
+          <span>🔄 Actualizar Vista del CSV</span>
+        </button>
+      </div>
+
+      <div id="contenedorMaestro" style="overflow-x: auto;">
+        <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 1.5rem 0;">
+          Haz clic en <strong>Actualizar Vista del CSV</strong> para ver todas las filas registradas.
+        </p>
+      </div>
+    </div>
+
+    <!-- Generador de Alertas (Herramienta 5) -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">🚨 Reporte de Alertas y Riesgos (Herramienta 5: alertas)</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            Genera el archivo <code>out/alertas.md</code> con contratos próximos a vencer (&le; 60 días), pólizas pendientes y gap cubierto.
+          </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input type="date" id="inputFechaHoy" value="2026-09-03" style="padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem;">
+          <button class="btn" style="background: #dc2626;" onclick="generarAlertas()">
+            <span>🚨 Generar Alertas</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="contenedorAlertas">
+        <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 1.5rem 0;">
+          Haz clic en <strong>Generar Alertas</strong> para producir el informe ejecutivo de riesgos.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Sesión de chat
+    const sessionId = 'sesion_' + Math.random().toString(36).substring(2, 9)
+
+    function insertarPromptEjemplo() {
+      const input = document.getElementById('chatInput')
+      input.value = "Procesa el buzón de contratos con fecha de hoy 2026-09-03. Registra lo que esté limpio, muéstrame lo que requiere revisión campo por campo y termina con el reporte de alertas. No registres nada dudoso sin preguntarme."
+      input.focus()
+    }
+
+    async function enviarMensajeChat() {
+      const input = document.getElementById('chatInput')
+      const btn = document.getElementById('btnEnviarChat')
+      const contenedor = document.getElementById('chatMessages')
+      const mensaje = input.value.trim()
+
+      if (!mensaje) return
+
+      // Mensaje del usuario
+      contenedor.innerHTML += `
+        <div style="background: var(--primary); color: white; align-self: flex-end; padding: 0.7rem 1rem; border-radius: 12px 12px 2px 12px; max-width: 80%; font-size: 0.88rem; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+          ${mensaje}
+        </div>
+      `
+      input.value = ''
+      input.disabled = true
+      btn.disabled = true
+      btn.innerText = '⏳ Pensando...'
+      contenedor.scrollTop = contenedor.scrollHeight
+
+      // Indicador de carga
+      const tempId = 'temp_' + Date.now()
+      contenedor.innerHTML += `
+        <div id="${tempId}" style="background: #f1f5f9; color: var(--text-muted); align-self: flex-start; padding: 0.8rem 1rem; border-radius: 8px; font-size: 0.84rem; display: flex; align-items: center; gap: 0.6rem; border: 1px solid var(--border);">
+          <span style="display: inline-block; animation: spin 1.2s infinite linear; font-size: 1.1rem;">⚙️</span>
+          <div>
+            <strong>El agente autónomo está trabajando...</strong><br>
+            <span style="font-size: 0.78rem; color: #64748b;">Consultando el buzón, extrayendo cláusulas y validando contratos paso a paso (toma entre 10 y 25 segundos).</span>
+          </div>
+        </div>
+      `
+      contenedor.scrollTop = contenedor.scrollHeight
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, message: mensaje })
+        })
+
+        const tempElement = document.getElementById(tempId)
+        if (tempElement) tempElement.remove()
+
+        if (!res.ok) {
+          const errText = await res.text()
+          throw new Error(errText)
+        }
+
+        const data = await res.json()
+
+        // Llamadas a herramientas
+        if (data.toolCalls && data.toolCalls.length > 0) {
+          let toolHtml = `<div style="display: flex; flex-direction: column; gap: 0.35rem; align-self: flex-start; max-width: 90%;">`
+          for (const tc of data.toolCalls) {
+            const argsStr = JSON.stringify(tc.args)
+            const estadoStr = tc.resultado?.ok ? '✔ Éxito' : '⚠ Revisión/Error'
+            const colorEstado = tc.resultado?.ok ? '#166534' : '#92400e'
+            toolHtml += `
+              <div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 0.4rem 0.7rem; font-size: 0.75rem; color: #475569; font-family: monospace;">
+                <strong>🔧 ${tc.name}</strong>(${argsStr === '{}' ? '' : argsStr}) ➔ <span style="color: ${colorEstado}; font-weight: bold;">${estadoStr}</span>
+              </div>
+            `
+          }
+          toolHtml += `</div>`
+          contenedor.innerHTML += toolHtml
+        }
+
+        // Respuesta del agente
+        const bordeAlerta = data.needsConfirmation ? 'border: 2px solid #eab308; background: #fefce8;' : 'border: 1px solid var(--border); background: #ffffff;'
+        const badgeConfirmacion = data.needsConfirmation ? '<div style="background: #fef08a; color: #854d0e; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; display: inline-block; margin-bottom: 0.5rem;">✋ REQUIERE CONFIRMACIÓN HUMANA (Regla RN5)</div><br>' : ''
+
+        contenedor.innerHTML += `
+          <div style="${bordeAlerta} align-self: flex-start; padding: 0.8rem 1rem; border-radius: 12px 12px 12px 2px; max-width: 85%; font-size: 0.88rem; line-height: 1.45; white-space: pre-wrap; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            ${badgeConfirmacion}${data.reply}
+          </div>
+        `
+
+        // Actualización de vistas
+        cargarBuzon()
+        cargarMaestro()
+
+      } catch (err) {
+        const tempElement = document.getElementById(tempId)
+        if (tempElement) tempElement.remove()
+
+        contenedor.innerHTML += `
+          <div style="background: var(--danger-bg); color: var(--danger-text); padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.82rem; align-self: flex-start;">
+            ❌ Error al conectar con el agente: ${err.message}
+          </div>
+        `
+      } finally {
+        input.disabled = false
+        btn.disabled = false
+        btn.innerText = 'Enviar ➔'
+        contenedor.scrollTop = contenedor.scrollHeight
+        input.focus()
+      }
+    }
+
+    async function cargarBuzon() {
+      const btn = document.getElementById('btnLeerBuzon')
+      const contenedor = document.getElementById('resultadoBuzon')
+      btn.disabled = true
+
+      try {
+        const res = await fetch('/api/test/leer-buzon')
+        if (!res.ok) throw new Error(await res.text())
+        const json = await res.json()
+        const mensajes = json.data.mensajes
+
+        if (mensajes.length === 0) {
+          contenedor.innerHTML = '<p style="color: var(--success-text); padding: 1rem; font-weight: 600;">✅ ¡Todos los mensajes del buzón ya fueron procesados y registrados!</p>'
+          return
+        }
+
+        let html = `<div class="inbox-grid">`
+        for (const m of mensajes) {
+          const badgeClass = m.tiene_contrato ? 'has-contract' : 'no-contract'
+          const badgeText = m.tiene_contrato ? '✓ Contrato' : '⚠ Cotización'
+          
+          let botones = ''
+          if (m.tiene_contrato) {
+            botones = `
+              <button class="btn btn-outline" onclick="probarExtraer('${m.id}')">🔍 Extraer</button>
+              <button class="btn btn-outline" onclick="probarValidar('${m.id}')">⚖️ Validar</button>
+              <button class="btn btn-success" onclick="probarRegistrar('${m.id}', false)">💾 Registrar</button>
+            `
+          } else {
+            botones = `<button class="btn" style="background: var(--danger-text);" onclick="probarValidar('${m.id}')">⚖️ Validar</button>`
+          }
+
+          html += `
+            <div class="msg-item">
+              <div class="msg-top">
+                <span class="msg-id">${m.id}</span>
+                <span class="msg-badge ${badgeClass}">${badgeText}</span>
+              </div>
+              <div style="font-weight: 600; font-size: 0.9rem;">${m.asunto}</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">De: ${m.de}</div>
+              <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: flex-end;">
+                ${botones}
+              </div>
+            </div>
+          `
+        }
+        html += `</div>`
+        contenedor.innerHTML = html
+
+      } catch (err) {
+        contenedor.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`
+      } finally {
+        btn.disabled = false
+      }
+    }
+
+    async function probarRegistrar(mensajeId, confirmado) {
+      const card = document.getElementById('cardResultado')
+      const zonaReg = document.getElementById('zonaRegistro')
+      const zonaVal = document.getElementById('zonaValidacion')
+      const zonaFicha = document.getElementById('zonaFicha')
+      const titulo = document.getElementById('tituloResultado')
+
+      card.style.display = 'block'
+      zonaVal.innerHTML = ''
+      zonaFicha.innerHTML = ''
+      zonaReg.innerHTML = `<p style="color: var(--text-muted);">⏳ Intentando registrar ${mensajeId} en el maestro CSV (confirmado: ${confirmado})...</p>`
+      card.scrollIntoView({ behavior: 'smooth' })
+
+      try {
+        const url = `/api/test/registrar?id=${mensajeId}${confirmado ? '&confirmado=true' : ''}`
+        const res = await fetch(url)
+        const json = await res.json()
+
+        titulo.innerText = `💾 Registro de ${mensajeId} (Herramienta: contratos_registrar)`
+
+        if (!json.ok) {
+          // Revisión humana requerida
+          zonaReg.innerHTML = `
+            <div style="background: var(--warn-bg); color: var(--warn-text); border: 1px solid #fde68a; border-radius: 8px; padding: 1rem; margin-top: 0.5rem;">
+              <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">🛡️ Bloqueo de Seguridad Activado (Regla RN5)</h3>
+              <p style="font-size: 0.85rem;">${json.error}</p>
+              <div style="margin-top: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+                <button class="btn btn-success" onclick="probarRegistrar('${mensajeId}', true)">
+                  ✅ Confirmo los campos dudosos y autorizo registrar
+                </button>
+              </div>
+            </div>
+          `
+          return
+        }
+
+        const d = json.data
+        let htmlExito = `
+          <div style="background: var(--success-bg); color: var(--success-text); border: 1px solid #86efac; border-radius: 8px; padding: 1rem; margin-top: 0.5rem;">
+            <h3 style="font-size: 1.05rem; margin-bottom: 0.4rem;">
+              🎉 ¡Contrato ${d.id_contrato} procesado con éxito (${d.accion.toUpperCase()})!
+            </h3>
+            <ul style="margin-left: 1.5rem; font-size: 0.85rem; margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem;">
+              <li>Fila escrita en: <code>out/sharepoint/maestro-contratos.csv</code></li>
+              ${d.ruta_archivo ? `<li>Documento archivado en SharePoint: <code>out/sharepoint/${d.ruta_archivo}</code></li>` : ''}
+              <li>Bitácora de auditoría actualizada en: <code>out/sharepoint/historial.jsonl</code></li>
+              <li>Mensaje marcado como procesado en: <code>out/procesados.json</code></li>
+            </ul>
+          </div>
+        `
+        zonaReg.innerHTML = htmlExito
+
+      } catch (err) {
+        zonaReg.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`
+      }
+    }
+
+    async function probarValidar(mensajeId) {
+      const card = document.getElementById('cardResultado')
+      const zonaReg = document.getElementById('zonaRegistro')
+      const zonaVal = document.getElementById('zonaValidacion')
+      const zonaFicha = document.getElementById('zonaFicha')
+      const titulo = document.getElementById('tituloResultado')
+
+      card.style.display = 'block'
+      zonaReg.innerHTML = ''
+      zonaFicha.innerHTML = ''
+      zonaVal.innerHTML = `<p style="color: var(--text-muted);">⏳ Validando ${mensajeId} contra el maestro CSV...</p>`
+      card.scrollIntoView({ behavior: 'smooth' })
+
+      try {
+        const res = await fetch(`/api/test/validar?id=${mensajeId}`)
+        if (!res.ok) throw new Error(await res.text())
+        const json = await res.json()
+        const v = json.data
+
+        titulo.innerText = `⚖️ Validación de ${mensajeId} (Herramienta: contratos_validar)`
+
+        let claseBadge = `class-${v.clasificacion}`
+        let explicacionRegla = ''
+        if (v.clasificacion === 'nuevo') explicacionRegla = 'RN3: Contrato sin coincidencia previa en el maestro. Se registrará como nueva fila.'
+        if (v.clasificacion === 'duplicado') explicacionRegla = 'RN1: Mismo contrato con exactamente los mismos valores y vigencias. NO se escribe nada.'
+        if (v.clasificacion === 'actualizacion') explicacionRegla = 'RN2: Contrato existente modificado por otrosí o cambios de fechas/valor. Se actualizará la fila.'
+        if (v.clasificacion === 'rechazado') explicacionRegla = 'RN4: No contiene un contrato válido (ej: cotización). No se registra.'
+
+        let htmlVal = `
+          <div class="validation-box ${claseBadge}">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 800; font-size: 1.1rem; text-transform: uppercase;">
+                Clasificación: ${v.clasificacion}
+              </span>
+              ${v.id_contrato_existente ? `<span style="font-size: 0.85rem;">Contrato en maestro: <strong>${v.id_contrato_existente}</strong></span>` : ''}
+            </div>
+            <p style="font-size: 0.85rem; margin-top: 0.25rem;">${explicacionRegla}</p>
+          </div>
+        `
+
+        if (v.requiere_revision && v.requiere_revision.length > 0) {
+          htmlVal += `
+            <div style="background: var(--warn-bg); color: var(--warn-text); border: 1px solid #fde68a; border-radius: 8px; padding: 0.8rem; margin-top: 0.8rem;">
+              <strong>⚠️ Requiere Revisión Humana Obligatoria (Regla RN5):</strong>
+              <p style="font-size: 0.85rem; margin-top: 0.25rem;">
+                El agente NO puede registrar este contrato de forma automática hasta que la analista confirme en el chat los siguientes campos:
+              </p>
+              <ul style="margin-left: 1.5rem; font-size: 0.85rem; margin-top: 0.25rem;">
+                ${v.requiere_revision.map(c => `<li><code>${c}</code></li>`).join('')}
+              </ul>
+            </div>
+          `
+        }
+
+        if (v.diferencias) {
+          htmlVal += `
+            <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; margin-top: 0.8rem;">
+              <strong>🔄 Cambios detectados frente al registro anterior:</strong>
+              <ul style="margin-left: 1.5rem; font-size: 0.85rem; margin-top: 0.25rem;">
+                ${Object.entries(v.diferencias).map(([k, d]) => `<li><strong>${k}:</strong> cambió de <code>${d.anterior}</code> a <code>${d.nuevo}</code></li>`).join('')}
+              </ul>
+            </div>
+          `
+        }
+
+        zonaVal.innerHTML = htmlVal
+
+      } catch (err) {
+        zonaVal.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`
+      }
+    }
+
+    async function probarExtraer(mensajeId) {
+      const card = document.getElementById('cardResultado')
+      const zonaReg = document.getElementById('zonaRegistro')
+      const zonaVal = document.getElementById('zonaValidacion')
+      const zonaFicha = document.getElementById('zonaFicha')
+      const titulo = document.getElementById('tituloResultado')
+
+      card.style.display = 'block'
+      zonaReg.innerHTML = ''
+      zonaVal.innerHTML = ''
+      zonaFicha.innerHTML = `<p style="color: var(--text-muted);">⏳ Extrayendo datos de ${mensajeId}...</p>`
+      card.scrollIntoView({ behavior: 'smooth' })
+
+      try {
+        const res = await fetch(`/api/test/extraer?id=${mensajeId}`)
+        if (!res.ok) throw new Error(await res.text())
+        const json = await res.json()
+        const d = json.data
+        titulo.innerText = `📄 Ficha Técnica: ${d.id_contrato || 'Sin ID'} (${mensajeId})`
+
+        function formatConf(val) {
+          if (val === undefined) return '-'
+          const cls = val >= 0.8 ? 'conf-high' : 'conf-low'
+          const pct = Math.round(val * 100)
+          return `<span class="conf-badge ${cls}">${pct}%</span>`
+        }
+
+        zonaFicha.innerHTML = `
+          <table class="data-table">
+            <thead><tr><th>Campo</th><th>Valor Extraído</th><th>Confianza</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Número de Contrato</strong></td><td><code>${d.id_contrato || '-'}</code></td><td>${formatConf(d.confianza.id_contrato)}</td></tr>
+              <tr><td><strong>Cliente</strong></td><td>${d.cliente || '-'}</td><td>${formatConf(d.confianza.cliente)}</td></tr>
+              <tr><td><strong>NIT / RUC</strong></td><td><code>${d.nit_cliente || '-'}</code> (País: ${d.pais})</td><td>${formatConf(d.confianza.nit_cliente)}</td></tr>
+              <tr><td><strong>Valor</strong></td><td><strong>${d.moneda} $${(d.valor || 0).toLocaleString()}</strong></td><td>${formatConf(d.confianza.valor)}</td></tr>
+              <tr><td><strong>Vigencia</strong></td><td>${d.fecha_inicio || '?'} ➔ ${d.fecha_fin || '?'}</td><td>Inicio: ${formatConf(d.confianza.fecha_inicio)} | Fin: ${formatConf(d.confianza.fecha_fin)}</td></tr>
+              <tr><td><strong>Póliza</strong></td><td>${d.requiere_poliza ? '✅ Sí (' + d.tipo_poliza + ')' : '❌ No'}</td><td>${formatConf(d.confianza.requiere_poliza)}</td></tr>
+              <tr><td><strong>Comercial</strong></td><td>${d.comercial}</td><td>-</td></tr>
+            </tbody>
+          </table>
+        `
+      } catch (err) {
+        zonaFicha.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`
+      }
+    }
+
+    async function cargarMaestro() {
+      const contenedor = document.getElementById('contenedorMaestro')
+      contenedor.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">⏳ Cargando filas del maestro CSV...</p>'
+
+      try {
+        const res = await fetch('/api/test/maestro')
+        const json = await res.json()
+        const filas = json.data
+
+        if (filas.length === 0) {
+          contenedor.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">El archivo maestro aún no tiene registros.</p>'
+          return
+        }
+
+        let html = `
+          <table class="data-table" style="font-size: 0.82rem;">
+            <thead>
+              <tr>
+                <th>ID Contrato</th>
+                <th>Cliente</th>
+                <th>NIT</th>
+                <th>Valor</th>
+                <th>Moneda</th>
+                <th>Vigencia</th>
+                <th>Póliza</th>
+                <th>Comercial</th>
+                <th>Ruta SharePoint</th>
+                <th>Fuente</th>
+              </tr>
+            </thead>
+            <tbody>
+        `
+
+        for (const f of filas) {
+          const esNuevo = f.id_contrato === 'CT-2026-015' || f.id_contrato === 'CM-2026-03' || f.id_contrato === 'CT-2026-016'
+          const estiloFila = esNuevo ? 'style="background: #f0fdf4; font-weight: 600;"' : ''
+
+          html += `
+            <tr ${estiloFila}>
+              <td><code>${f.id_contrato}</code></td>
+              <td>${f.cliente}</td>
+              <td><code>${f.nit_cliente}</code></td>
+              <td>$${parseInt(f.valor || 0).toLocaleString()}</td>
+              <td>${f.moneda}</td>
+              <td>${f.fecha_inicio} al ${f.fecha_fin}</td>
+              <td>${f.requiere_poliza === 'true' ? '✅ ' + f.estado_poliza : '❌ No'}</td>
+              <td>${f.comercial}</td>
+              <td><small style="color: var(--text-muted);">${f.ruta_sharepoint}</small></td>
+              <td><span class="msg-badge" style="background: #e2e8f0;">${f.fuente}</span></td>
+            </tr>
+          `
+        }
+
+        html += `</tbody></table>`
+        contenedor.innerHTML = html
+
+      } catch (err) {
+        contenedor.innerHTML = `<p style="color: red;">Error al leer el maestro: ${err.message}</p>`
+      }
+    }
+
+    async function generarAlertas() {
+      const fecha = document.getElementById('inputFechaHoy').value || '2026-09-03'
+      const contenedor = document.getElementById('contenedorAlertas')
+      contenedor.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">⏳ Calculando alertas y riesgos...</p>'
+
+      try {
+        const res = await fetch(`/api/test/alertas?hoy=${fecha}`)
+        if (!res.ok) throw new Error(await res.text())
+        const json = await res.json()
+        const d = json.data
+
+        let html = `
+          <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; margin-top: 1rem;">
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+              <div style="background: #fee2e2; color: #991b1b; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 700;">
+                ⏳ Vencen en &le; 60 días: ${d.total_vencen_60d}
+              </div>
+              <div style="background: #fef3c7; color: #92400e; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 700;">
+                🛡️ Pólizas pendientes: ${d.total_polizas_pendientes}
+              </div>
+              <div style="background: #dcfce7; color: #166534; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 700;">
+                📈 Contratos post-corte: ${d.total_post_corte}
+              </div>
+            </div>
+
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">📄 Contenido generado en <code>${d.ruta}</code>:</h4>
+            <pre style="background: #ffffff; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; font-size: 0.8rem; overflow-x: auto; white-space: pre-wrap; font-family: monospace;">${d.reporte_markdown}</pre>
+          </div>
+        `
+        contenedor.innerHTML = html
+
+      } catch (err) {
+        contenedor.innerHTML = `<p style="color: red;">Error al generar alertas: ${err.message}</p>`
+      }
+    }
+
+    async function reiniciarDatos() {
+      if (!confirm('¿Deseas reiniciar los datos de prueba? Esto limpiará la carpeta out/ para procesar todos los mensajes desde cero.')) return
+      try {
+        const res = await fetch('/api/test/reiniciar')
+        const json = await res.json()
+        alert(json.mensaje)
+        cargarBuzon()
+        cargarMaestro()
+        document.getElementById('contenedorAlertas').innerHTML = 'Haz clic en Generar Alertas para producir el informe ejecutivo de riesgos.'
+        document.getElementById('cardResultado').style.display = 'none'
+      } catch (e) {
+        alert('Error al reiniciar: ' + e.message)
+      }
+    }
+  </script>
+</body>
+</html>

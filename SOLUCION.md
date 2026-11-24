@@ -237,14 +237,22 @@ $$\text{IRC} = \left( \frac{\text{Monto Total Facturado con Contrato Vigente y P
 
 ## 10. Declaración de Uso de Inteligencia Artificial
 
-Para el desarrollo se utilizó un asistente de IA (**Gemini / Copilot**) de forma puntual como apoyo de consulta en tareas específicas:
-- Afinación de expresiones regulares para formatos de fechas en español y prefijos tributarios (NIT/RUC/RTN).
-- Verificación rápida de sintaxis TypeScript/Zod y estructura CSS del panel web.
+**Herramienta utilizada:** Antigravity (asistente de programación con IA de Google), usado como compañero de programación durante todo el desarrollo.
 
-**Propuestas descartadas por criterio técnico propio:**
-- **Uso de `LangChain`:** se descartó porque agrega capas innecesarias de abstracción sobre un ciclo de agente que puede implementarse de forma más clara, auditable y ligera en menos de 200 líneas nativas.
-- **Delegar la extracción de datos directamente al LLM:** se descartó por riesgo de alucinaciones o redondeos en valores y fechas de otrosíes; se implementó extracción determinista con cálculo explícito de confianza.
-- **Confiar solo en el prompt para la confirmación humana (RN5):** se descartó al detectar en pruebas que el modelo podía enviarse `confirmado: true` por sí mismo; se agregó validación en código tanto en `registrar` como en `agent.ts`.
+**Para qué se usó:**
+- Generar la estructura base del proyecto y una primera versión de las herramientas, el ciclo del agente, el servidor y la interfaz.
+- Depurar errores de integración con la API de Gemini: el formato de `functionResponse`, el error 503 por alta demanda y el `fetch failed` causado por IPv6 en Windows.
+- Redactar la primera versión de la documentación (`README.md` y este documento).
+
+**Mi trabajo sobre lo generado:**
+- Revisé y probé cada herramienta con los 6 mensajes del buzón, y comparé los resultados contra lo esperado en la sección 7.4 del PRD.
+- Detecté en pruebas reales que el modelo afirmaba registros que no había hecho y que se enviaba `confirmado: true` a sí mismo. Por eso exigí agregar la verificación automática y el control de confirmación en `agent.ts`.
+- Tomé las decisiones de diseño documentadas en la sección 7 y puedo explicar cada línea del código entregado.
+
+**Propuestas descartadas:**
+- **Uso de `LangChain`:** agrega abstracción innecesaria sobre un ciclo de agente que se implementa de forma más clara y auditable con código nativo.
+- **Delegar la extracción de datos al LLM:** riesgo de alucinaciones o redondeos en valores y fechas; se mantuvo extracción determinista con confianza explícita.
+- **Confiar solo en el prompt para la confirmación humana (RN5):** las pruebas mostraron que no basta; la regla se impone en código en `registrar` y en `agent.ts`.
 
 ---
 

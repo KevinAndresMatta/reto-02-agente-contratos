@@ -4,6 +4,8 @@
 
 Agente conversacional que lee un buzón de correos, extrae los datos de cada contrato, los valida contra el maestro (CSV tipo SharePoint), registra lo limpio, **pide confirmación humana para lo dudoso** y genera un reporte de alertas.
 
+**🌐 Link de prueba:** https://reto-02-agente-contratos-n51e.onrender.com/ (acceso público, sin clave)
+
 ---
 
 ## 🚀 1. Arranque en 1 comando
